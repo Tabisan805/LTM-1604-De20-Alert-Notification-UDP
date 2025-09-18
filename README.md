@@ -41,7 +41,9 @@ Hệ thống có thể sử dụng:
 ---
 ## 2. Công nghệ sử dụng
 <div align="center">
+    
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+
 </div>
 ---
 ## 3. Một số hình ảnh hệ thống
