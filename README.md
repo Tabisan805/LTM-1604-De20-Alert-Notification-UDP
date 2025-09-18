@@ -4,7 +4,7 @@
     </a>
 </h2>
 <h2 align="center">
-   HỆ THỐNG CẢNH BÁO THỜI GIAN THỰC (SERVER GỬI CẢNH CÁO ĐẾN NHIỀU CLIENT QUA UCP)
+   HỆ THỐNG CẢNH BÁO THỜI GIAN THỰC
 </h2>
 <div align="center">
     <p align="center">
