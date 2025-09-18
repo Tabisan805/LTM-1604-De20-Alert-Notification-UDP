@@ -18,6 +18,8 @@
 [![DaiNam University](https://img.shields.io/badge/DaiNam%20University-orange?style=for-the-badge)](https://dainam.edu.vn)
 
 </div>
+
+---
 ## 1. Giới thiệu hệ thống
 Hệ thống Cảnh báo Thời gian Thực được xây dựng nhằm truyền tải thông điệp cảnh báo từ **máy chủ** đến nhiều **máy khách (client)** cùng một lúc qua giao thức **UDP**.  
 
