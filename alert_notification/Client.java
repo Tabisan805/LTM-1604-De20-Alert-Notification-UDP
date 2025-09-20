@@ -6,7 +6,11 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 
 public class Client extends JFrame {
-    private JTextField messageField;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private JTextField messageField;
     private JComboBox<String> levelBox;
 
     public Client() {
