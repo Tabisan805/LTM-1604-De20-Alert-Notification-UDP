@@ -106,11 +106,11 @@ javac server/Server.java client/Client.java logger/Logger.java
 Khởi động Server
 ```
 java server.Server
-Server sẽ lắng nghe trên multicast group mặc định 230.0.0.0:4446.
 ```
+Server sẽ lắng nghe trên multicast group mặc định 230.0.0.1:5000.
 Console hiển thị:
 ```
-[Server] Listening on multicast group 230.0.0.0:4446
+[Server] Listening on multicast group 230.0.0.1:5000
 ```
 Khởi động Client
 ```
