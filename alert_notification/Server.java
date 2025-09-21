@@ -13,14 +13,14 @@ import java.util.concurrent.*;
 
 public class Server extends JFrame {
     // Networking
-    private static final String MULTICAST_ADDR = "230.0.0.0";
-    private static final int PORT = 4446;
+    private static final String MULTICAST_ADDR = "230.0.0.1";
+    private static final int PORT = 5000;
     private MulticastSocket multicastSocket;
     private InetAddress group;
 
     // UI
     private final JComboBox<String> levelCombo = new JComboBox<>(new String[]{"INFO","WARNING","DANGER","CRITICAL"});
-    private final JTextField messageField = new JTextField("WARNING: Nguy cơ tiềm ẩn");
+    private final JTextField messageField = new JTextField("");
     private final JTextArea logArea = new JTextArea(12, 60);
     private final JLabel clientsLabel = new JLabel("Clients connected: 0");
     private final JLabel serverLabel = new JLabel("Server: " + MULTICAST_ADDR + ":" + PORT);
@@ -38,7 +38,7 @@ public class Server extends JFrame {
     private int logCount = 0;
 
     public Server() {
-        setTitle("UDP Warning Server");
+        setTitle("Warning Server");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initUI();
         pack();
@@ -62,10 +62,10 @@ public class Server extends JFrame {
         };
         header.setPreferredSize(new Dimension(800, 90));
         header.setLayout(new BorderLayout());
-        JLabel title = new JLabel("UDP Warning Server", SwingConstants.CENTER);
+        JLabel title = new JLabel("Máy chủ cảnh báo", SwingConstants.CENTER);
         title.setForeground(Color.WHITE);
         title.setFont(new Font("SansSerif", Font.BOLD, 28));
-        JLabel subtitle = new JLabel("Alert Broadcasting & Management System", SwingConstants.CENTER);
+        JLabel subtitle = new JLabel("", SwingConstants.CENTER);
         subtitle.setForeground(new Color(230,230,230));
         subtitle.setFont(new Font("SansSerif", Font.PLAIN, 14));
         header.add(title, BorderLayout.CENTER);
@@ -185,6 +185,7 @@ public class Server extends JFrame {
         } else {
             appendLog(sdf.format(System.currentTimeMillis()) + " - Received from " + sender + ": " + msg);
         }
+        
     }
 
     private void updateClientsLabel() {

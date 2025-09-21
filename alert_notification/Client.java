@@ -14,8 +14,8 @@ public class Client extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private static final String MULTICAST_ADDR = "230.0.0.0";
-    private static final int PORT = 4446;
+	private static final String MULTICAST_ADDR = "230.0.0.1";
+    private static final int PORT = 5000;
 
     private final JTextArea alertArea = new JTextArea(12, 50);
     private final JLabel entriesLabel = new JLabel("0 alerts");
@@ -30,7 +30,7 @@ public class Client extends JFrame {
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public Client() {
-        setTitle("UDP Warning Client");
+        setTitle("Warning Client");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initUI();
         pack();
@@ -58,7 +58,7 @@ public class Client extends JFrame {
         JLabel title = new JLabel("Hệ thống cảnh báo UDP", SwingConstants.CENTER);
         title.setForeground(Color.WHITE);
         title.setFont(new Font("SansSerif", Font.BOLD, 26));
-        JLabel subtitle = new JLabel("Alert Receiver & Notification System", SwingConstants.CENTER);
+        JLabel subtitle = new JLabel("", SwingConstants.CENTER);
         subtitle.setForeground(new Color(230,230,230));
         subtitle.setFont(new Font("SansSerif", Font.PLAIN, 14));
         header.add(title, BorderLayout.CENTER);
@@ -109,6 +109,11 @@ public class Client extends JFrame {
     }
 
     private void handleMessage(String msg) {
+        // Bỏ qua gói REGISTER/HEARTBEAT/UNREGISTER
+        if (msg.startsWith("REGISTER:") || msg.startsWith("HEARTBEAT:") || msg.startsWith("UNREGISTER:")) {
+            return;
+        }
+
         alertCount++;
         String timestamp = sdf.format(new Date());
         alertArea.append("[" + timestamp + "] " + msg + "\n");

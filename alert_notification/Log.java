@@ -10,9 +10,13 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Logger extends JFrame {
-    private static final String MULTICAST_ADDR = "230.0.0.0";
-    private static final int PORT = 4446;
+public class Log extends JFrame {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final String MULTICAST_ADDR = "230.0.0.1";
+    private static final int PORT = 5000;
 
     private final DefaultTableModel tableModel;
     private final JLabel statusLabel = new JLabel("Listening on " + MULTICAST_ADDR + ":" + PORT);
@@ -23,14 +27,19 @@ public class Logger extends JFrame {
     private int alertCount = 0;
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public Logger() {
-        setTitle("UDP Warning Logger");
+    public Log() {
+        setTitle("Warning Log");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         // Header
         JPanel header = new JPanel() {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
@@ -42,10 +51,10 @@ public class Logger extends JFrame {
         };
         header.setPreferredSize(new Dimension(700, 80));
         header.setLayout(new BorderLayout());
-        JLabel title = new JLabel("UDP Warning Logger", SwingConstants.CENTER);
+        JLabel title = new JLabel("Warning Log", SwingConstants.CENTER);
         title.setForeground(Color.WHITE);
         title.setFont(new Font("SansSerif", Font.BOLD, 26));
-        JLabel subtitle = new JLabel("Alert Logging & History Viewer", SwingConstants.CENTER);
+        JLabel subtitle = new JLabel("", SwingConstants.CENTER);
         subtitle.setForeground(new Color(230,230,230));
         subtitle.setFont(new Font("SansSerif", Font.PLAIN, 14));
         header.add(title, BorderLayout.CENTER);
@@ -105,6 +114,11 @@ public class Logger extends JFrame {
     }
 
     private void handleMessage(String msg) {
+        // Bỏ qua gói REGISTER/HEARTBEAT/UNREGISTER
+        if (msg.startsWith("REGISTER:") || msg.startsWith("HEARTBEAT:") || msg.startsWith("UNREGISTER:")) {
+            return;
+        }
+
         alertCount++;
         countLabel.setText("Total alerts: " + alertCount);
 
@@ -120,6 +134,7 @@ public class Logger extends JFrame {
 
         tableModel.addRow(new Object[]{timestamp, level, content});
     }
+
 
     private void exportToCSV() {
         File file = new File("client_logs.csv");
@@ -140,6 +155,6 @@ public class Logger extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Logger().setVisible(true));
+        SwingUtilities.invokeLater(() -> new Log().setVisible(true));
     }
 }
