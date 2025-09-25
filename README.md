@@ -135,7 +135,7 @@ Logger sẽ chỉ ghi cảnh báo vào file logger.log và hiển thị real-tim
 ---
 ## 5. Liên hệ
 - **Sinh viên thực hiện:** **Lã Việt Hoàng**
-- **Khoa công nghệ thông tin – Đại học Đại Nam**  
+- **Khoa Công nghệ thông tin – Đại học Đại Nam**  
 - 🌐 Website: [https://dainam.edu.vn/vi/khoa-cong-nghe-thong-tin](https://dainam.edu.vn/vi/khoa-cong-nghe-thong-tin)  
 - 📧 Email: [lahoangprotknl@gmail.com]
 - 📱 Fanpage: [AIoTLab - FIT DNU](https://www.facebook.com/DNUAIoTLab)
