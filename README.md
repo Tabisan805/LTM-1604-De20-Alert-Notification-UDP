@@ -50,7 +50,7 @@ Mục tiêu chính:
     
 [![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 ![UDP](https://img.shields.io/badge/UDP-PROTOCOL-hex?style=for-the-badge&link=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FUser_Datagram_Protocol)
-[![SocketNetword](https://img.shields.io/badge/Socket-Network-blue?style=for-the-badge)]([https://developer.mozilla.org/en-US/docs/Web/JavaScript](https://docs.oracle.com/javase/tutorial/networking/sockets/))
+[![SocketNetword](https://img.shields.io/badge/Socket-Network-blue?style=for-the-badge)](https://docs.oracle.com/javase/tutorial/networking/sockets/)
 [![JavaSwing](https://img.shields.io/badge/Java%20Swing-UI-orange?style=for-the-badge)](https://docs.oracle.com/javase/tutorial/uiswing/)
 
 </div>
