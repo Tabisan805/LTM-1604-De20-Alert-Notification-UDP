@@ -69,7 +69,7 @@ Mục tiêu chính:
 ---
 ## 4. Các bước cài đặt 
 
-🛠️ **4.1. Yêu cầu hệ thống**
+### 🛠️ 4.1. Yêu cầu hệ thống
 
 ☕ **Java Development Kit (JDK):** Phiên bản 8+ (khuyến nghị JDK 11 hoặc 17)  
 💻 **Hệ điều hành:** Windows, macOS, hoặc Linux  
@@ -79,7 +79,7 @@ Mục tiêu chính:
 
 ---
 
-📥 **4.2. Các bước cài đặt**
+### 📥4.2. Các bước cài đặt
 
 ### 🧰 Bước 1: Chuẩn bị môi trường
 Cài đặt **Java JDK** (yêu cầu JDK 8 trở lên, JDK 21 vẫn chạy tốt).  
