@@ -12,7 +12,11 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 public class Server extends JFrame {
-    // Networking
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	// Networking
     private static final String MULTICAST_ADDR = "230.0.0.1";
     private static final int PORT = 5000;
     private MulticastSocket multicastSocket;
@@ -21,7 +25,7 @@ public class Server extends JFrame {
     // UI
     private final JComboBox<String> levelCombo = new JComboBox<>(new String[]{"INFO","WARNING","DANGER","CRITICAL"});
     private final JTextField messageField = new JTextField("");
-    private final JTextArea logArea = new JTextArea(12, 60);
+    private final JTable logArea = new JTextArea(12, 60);
     private final JLabel clientsLabel = new JLabel("Clients connected: 0");
     private final JLabel serverLabel = new JLabel("Server: " + MULTICAST_ADDR + ":" + PORT);
     private final JLabel entriesLabel = new JLabel("0 entries");
@@ -50,7 +54,12 @@ public class Server extends JFrame {
     private void initUI() {
         // Header (simple gradient-like panel)
         JPanel header = new JPanel() {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
@@ -284,7 +293,6 @@ public class Server extends JFrame {
         return c;
     }
 
-    // remove stale clients (no heartbeat for 30 seconds)
     private void startClientPurgeTask() {
         final long STALE_MS = 30_000L;
         scheduler.scheduleAtFixedRate(() -> {
@@ -324,8 +332,6 @@ public class Server extends JFrame {
         SwingUtilities.invokeLater(() -> {
             Server app = new Server();
             app.setVisible(true);
-
-            // Add shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(app::shutdown));
         });
     }

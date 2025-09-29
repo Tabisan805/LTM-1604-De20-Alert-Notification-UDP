@@ -43,7 +43,9 @@ public class Client extends JFrame {
     private void initUI() {
         // Header
         JPanel header = new JPanel() {
-            @Override
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
@@ -100,6 +102,13 @@ public class Client extends JFrame {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length);
                     socket.receive(packet);
                     String msg = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8).trim();
+                    if (msg.startsWith("WARNING") || msg.startsWith("DANGER") || msg.startsWith("CRITICAL")) {
+                    	// Hiện popup cảnh báo
+                    	JOptionPane.showMessageDialog(null, msg,
+                    	"⚠️ Cảnh báo từ Server", JOptionPane.WARNING_MESSAGE);
+                    	} else {
+                    SwingUtilities.invokeLater(() -> handleMessage(msg));
+                    	}
                     SwingUtilities.invokeLater(() -> handleMessage(msg));
                 }
             } catch (IOException e) {
@@ -109,11 +118,10 @@ public class Client extends JFrame {
     }
 
     private void handleMessage(String msg) {
-        // Bỏ qua gói REGISTER/HEARTBEAT/UNREGISTER
+
         if (msg.startsWith("REGISTER:") || msg.startsWith("HEARTBEAT:") || msg.startsWith("UNREGISTER:")) {
             return;
         }
-
         alertCount++;
         String timestamp = sdf.format(new Date());
         alertArea.append("[" + timestamp + "] " + msg + "\n");
