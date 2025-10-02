@@ -6,154 +6,180 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Client.java
+ * - Gửi heartbeat đều đặn tới server
+ * - Nhận cảnh báo từ multicast group
+ * - Hiển thị log + popup
+ * - Gửi QUIT khi thoát
+ */
 public class Client extends JFrame {
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private static final String MULTICAST_ADDR = "230.0.0.1";
-    private static final int PORT = 5000;
 
-    private final JTextArea alertArea = new JTextArea(12, 50);
-    private final JLabel entriesLabel = new JLabel("0 alerts");
-    private final JLabel statusLabel = new JLabel("Listening on " + MULTICAST_ADDR + ":" + PORT);
-    private final JLabel updateLabel = new JLabel("Last update: none");
+    private static final String MULTICAST_GROUP = "230.0.0.1";
+    private static final int SERVER_PORT = 5000;     // multicast port (must match server)
+    private static final int HEARTBEAT_PORT = 5001;  // server heartbeat listener port
+    private static final int HEARTBEAT_INTERVAL = 5; // seconds
 
-    private int alertCount = 0;
-    private MulticastSocket socket;
-    private InetAddress group;
-    private String clientId = "client-" + (int)(Math.random()*1000);
+    private final String clientId;
+    private final JTextArea logArea;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private MulticastSocket multicastSocket;
 
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter TIME_FMT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 
-    public Client() {
-        setTitle("Warning Client");
+    public Client(String clientId) {
+        super("Client - " + clientId);
+        this.clientId = clientId;
+
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        initUI();
-        pack();
+        setSize(600, 400);
         setLocationRelativeTo(null);
 
-        startListening();
+        // ====== UI ======
+        JLabel title = new JLabel("Client ID: " + clientId, SwingConstants.CENTER);
+        title.setFont(new Font("SansSerif", Font.BOLD, 24));
+        title.setBorder(new EmptyBorder(10, 10, 10, 10));
+        add(title, BorderLayout.NORTH);
+
+        logArea = new JTextArea();
+        logArea.setEditable(false);
+        logArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        logArea.setLineWrap(true);
+        logArea.setWrapStyleWord(true);
+
+        JScrollPane scroll = new JScrollPane(logArea);
+        scroll.setBorder(BorderFactory.createTitledBorder("Received Alerts"));
+        add(scroll, BorderLayout.CENTER);
+
+        JButton exitBtn = new JButton("Thoát");
+        exitBtn.addActionListener(e -> {
+            shutdown();
+            System.exit(0);
+        });
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.add(exitBtn);
+        add(bottom, BorderLayout.SOUTH);
+
+        // Start tasks
         startHeartbeat();
+        startReceiver();
     }
 
-    private void initUI() {
-        // Header
-        JPanel header = new JPanel() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g;
-                Color c1 = new Color(19, 182, 112);
-                Color c2 = new Color(26, 152, 163);
-                g2.setPaint(new GradientPaint(0,0,c1, getWidth(), getHeight(), c2));
-                g2.fillRect(0,0,getWidth(),getHeight());
+    // ====== Heartbeat ======
+    private void startHeartbeat() {
+        scheduler.scheduleAtFixedRate(() -> {
+            try (DatagramSocket socket = new DatagramSocket()) {
+                String msg = "HEARTBEAT:" + clientId;
+                byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+                InetAddress serverAddr = InetAddress.getByName("127.0.0.1"); // chỉnh nếu server remote
+                DatagramPacket packet = new DatagramPacket(data, data.length, serverAddr, HEARTBEAT_PORT);
+                socket.send(packet);
+            } catch (IOException e) {
+                appendLog("⚠ Heartbeat error: " + e.getMessage(), "ERROR");
             }
-        };
-        header.setPreferredSize(new Dimension(700, 80));
-        header.setLayout(new BorderLayout());
-        JLabel title = new JLabel("Hệ thống cảnh báo UDP", SwingConstants.CENTER);
-        title.setForeground(Color.WHITE);
-        title.setFont(new Font("SansSerif", Font.BOLD, 26));
-        JLabel subtitle = new JLabel("", SwingConstants.CENTER);
-        subtitle.setForeground(new Color(230,230,230));
-        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        header.add(title, BorderLayout.CENTER);
-        header.add(subtitle, BorderLayout.SOUTH);
-
-        // Alert panel
-        JPanel alertPanel = new JPanel(new BorderLayout(6,6));
-        alertPanel.setBorder(new EmptyBorder(10,10,10,10));
-        alertArea.setEditable(false);
-        alertArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
-        JScrollPane scroll = new JScrollPane(alertArea);
-        alertPanel.add(entriesLabel, BorderLayout.NORTH);
-        alertPanel.add(scroll, BorderLayout.CENTER);
-
-        // Status bar
-        JPanel statusBar = new JPanel(new BorderLayout());
-        statusBar.setBorder(new EmptyBorder(6,10,6,10));
-        statusBar.add(statusLabel, BorderLayout.WEST);
-        statusBar.add(updateLabel, BorderLayout.EAST);
-
-        // Layout
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(header, BorderLayout.NORTH);
-        getContentPane().add(alertPanel, BorderLayout.CENTER);
-        getContentPane().add(statusBar, BorderLayout.SOUTH);
+        }, 0, HEARTBEAT_INTERVAL, TimeUnit.SECONDS);
     }
 
-    private void startListening() {
-        new Thread(() -> {
+    // ====== Nhận multicast ======
+    private void startReceiver() {
+        scheduler.execute(() -> {
             try {
-                group = InetAddress.getByName(MULTICAST_ADDR);
-                socket = new MulticastSocket(PORT);
-                socket.joinGroup(group);
+                multicastSocket = new MulticastSocket(SERVER_PORT);
+                InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
+                multicastSocket.joinGroup(group);
 
-                sendRegister();
+                appendLog("✅ Joined multicast group " + MULTICAST_GROUP + ":" + SERVER_PORT, "INFO");
 
                 byte[] buf = new byte[1024];
-                while (true) {
+                while (!Thread.currentThread().isInterrupted()) {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                    socket.receive(packet);
-                    String msg = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8).trim();
-                    if (msg.startsWith("WARNING") || msg.startsWith("DANGER") || msg.startsWith("CRITICAL")) {
-                    	// Hiện popup cảnh báo
-                    	JOptionPane.showMessageDialog(null, msg,
-                    	"⚠️ Cảnh báo từ Server", JOptionPane.WARNING_MESSAGE);
-                    	} else {
-                    SwingUtilities.invokeLater(() -> handleMessage(msg));
-                    	}
-                    SwingUtilities.invokeLater(() -> handleMessage(msg));
+                    multicastSocket.receive(packet);
+                    String recv = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
+
+                    appendLog("📩 Received alert: " + recv, "ALERT");
+
+                    // Xử lý popup vượt cấp
+                    SwingUtilities.invokeLater(() -> showAlertPopup(recv));
                 }
+
             } catch (IOException e) {
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Socket error: " + e.getMessage()));
+                appendLog("Receiver stopped: " + e.getMessage(), "ERROR");
             }
-        }, "Client-Listener").start();
+        });
     }
 
-    private void handleMessage(String msg) {
-
-        if (msg.startsWith("REGISTER:") || msg.startsWith("HEARTBEAT:") || msg.startsWith("UNREGISTER:")) {
-            return;
+    // ====== Hiển thị popup theo cấp độ ======
+    private void showAlertPopup(String message) {
+        if (message.startsWith("[ERROR]")) {
+            JOptionPane.showMessageDialog(this, message, "🚨 ERROR Alert", JOptionPane.ERROR_MESSAGE);
+        } else if (message.startsWith("[WARNING]")) {
+            JOptionPane.showMessageDialog(this, message, "⚠ WARNING Alert", JOptionPane.WARNING_MESSAGE);
+        } else {
+            // INFO hoặc các loại khác
+            JOptionPane.showMessageDialog(this, message, "ℹ Info Alert", JOptionPane.INFORMATION_MESSAGE);
         }
-        alertCount++;
-        String timestamp = sdf.format(new Date());
-        alertArea.append("[" + timestamp + "] " + msg + "\n");
-        alertArea.setCaretPosition(alertArea.getDocument().getLength());
-        entriesLabel.setText(alertCount + " alerts");
-        updateLabel.setText("Last update: " + timestamp);
     }
 
-    private void sendRegister() {
-        sendMessage("REGISTER:" + clientId);
+    // ====== Log ======
+    private void appendLog(String msg, String type) {
+        String line = TIME_FMT.format(Instant.now()) + " [" + type + "] " + msg + "\n";
+        SwingUtilities.invokeLater(() -> {
+            logArea.append(line);
+            logArea.setCaretPosition(logArea.getDocument().getLength());
+        });
     }
 
-    private void sendHeartbeat() {
-        sendMessage("HEARTBEAT:" + clientId);
-    }
+    // ====== Shutdown ======
+    private void shutdown() {
+        appendLog("🔻 Client shutting down...", "INFO");
+        // Gửi QUIT
+        try (DatagramSocket socket = new DatagramSocket()) {
+            String msg = "QUIT:" + clientId;
+            byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+            InetAddress serverAddr = InetAddress.getByName("127.0.0.1");
+            DatagramPacket packet = new DatagramPacket(data, data.length, serverAddr, HEARTBEAT_PORT);
+            socket.send(packet);
+            appendLog("Đã gửi QUIT tới server.", "QUIT");
+        } catch (IOException e) {
+            appendLog("⚠ Lỗi khi gửi QUIT: " + e.getMessage(), "ERROR");
+        }
 
-    private void sendMessage(String text) {
+        scheduler.shutdownNow();
         try {
-            byte[] data = text.getBytes(StandardCharsets.UTF_8);
-            DatagramPacket packet = new DatagramPacket(data, data.length, group, PORT);
-            MulticastSocket sendSock = new MulticastSocket();
-            sendSock.send(packet);
-            sendSock.close();
-        } catch (IOException ignored) {}
+            if (multicastSocket != null) {
+                multicastSocket.leaveGroup(InetAddress.getByName(MULTICAST_GROUP));
+                multicastSocket.close();
+            }
+        } catch (IOException ignored) {
+        }
     }
 
-    private void startHeartbeat() {
-        Timer timer = new Timer(10_000, e -> sendHeartbeat()); // mỗi 10s gửi heartbeat
-        timer.start();
-    }
-
+    // ====== Main ======
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Client().setVisible(true));
+        String id;
+        if (args.length > 0) {
+            id = args[0];
+        } else {
+            id = JOptionPane.showInputDialog(null, "Nhập Client ID:", "Client", JOptionPane.QUESTION_MESSAGE);
+            if (id == null || id.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Client ID không được để trống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        String finalId = id.trim();
+        SwingUtilities.invokeLater(() -> {
+            Client c = new Client(finalId);
+            c.setVisible(true);
+            Runtime.getRuntime().addShutdownHook(new Thread(c::shutdown));
+        });
     }
 }
